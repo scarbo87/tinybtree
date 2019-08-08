@@ -1,10 +1,11 @@
 package tinybtree
 
+const freeKey = -int(^uint64(0) >> 1)
 const maxItems = 31 // use an odd number
 const minItems = maxItems * 40 / 100
 
 type item struct {
-	key   string
+	key   int
 	value interface{}
 }
 
@@ -22,7 +23,7 @@ type BTree struct {
 	length int
 }
 
-func (n *node) find(key string) (index int, found bool) {
+func (n *node) find(key int) (index int, found bool) {
 	i, j := 0, n.numItems
 	for i < j {
 		h := i + (j-i)/2
@@ -39,7 +40,7 @@ func (n *node) find(key string) (index int, found bool) {
 }
 
 // Set or replace a value for a key
-func (tr *BTree) Set(key string, value interface{}) (
+func (tr *BTree) Set(key int, value interface{}) (
 	prev interface{}, replaced bool,
 ) {
 	if tr.root == nil {
@@ -87,7 +88,7 @@ func (n *node) split(height int) (right *node, median item) {
 	return
 }
 
-func (n *node) set(key string, value interface{}, height int) (
+func (n *node) set(key int, value interface{}, height int) (
 	prev interface{}, replaced bool,
 ) {
 	i, found := n.find(key)
@@ -120,14 +121,14 @@ func (n *node) set(key string, value interface{}, height int) (
 }
 
 // Scan all items in tree
-func (tr *BTree) Scan(iter func(key string, value interface{}) bool) {
+func (tr *BTree) Scan(iter func(key int, value interface{}) bool) {
 	if tr.root != nil {
 		tr.root.scan(iter, tr.height)
 	}
 }
 
 func (n *node) scan(
-	iter func(key string, value interface{}) bool, height int,
+	iter func(key int, value interface{}) bool, height int,
 ) bool {
 	if height == 0 {
 		for i := 0; i < n.numItems; i++ {
@@ -149,14 +150,14 @@ func (n *node) scan(
 }
 
 // Get a value for key
-func (tr *BTree) Get(key string) (value interface{}, gotten bool) {
+func (tr *BTree) Get(key int) (value interface{}, gotten bool) {
 	if tr.root == nil {
 		return
 	}
 	return tr.root.get(key, tr.height)
 }
 
-func (n *node) get(key string, height int) (value interface{}, gotten bool) {
+func (n *node) get(key int, height int) (value interface{}, gotten bool) {
 	i, found := n.find(key)
 	if found {
 		return n.items[i].value, true
@@ -173,7 +174,7 @@ func (tr *BTree) Len() int {
 }
 
 // Delete a value for a key
-func (tr *BTree) Delete(key string) (prev interface{}, deleted bool) {
+func (tr *BTree) Delete(key int) (prev interface{}, deleted bool) {
 	if tr.root == nil {
 		return
 	}
@@ -195,7 +196,7 @@ func (tr *BTree) Delete(key string) (prev interface{}, deleted bool) {
 	return
 }
 
-func (n *node) delete(max bool, key string, height int) (
+func (n *node) delete(max bool, key int, height int) (
 	prev item, deleted bool,
 ) {
 	i, found := 0, false
@@ -220,10 +221,10 @@ func (n *node) delete(max bool, key string, height int) (
 	if found {
 		if max {
 			i++
-			prev, deleted = n.children[i].delete(true, "", height-1)
+			prev, deleted = n.children[i].delete(true, freeKey, height-1)
 		} else {
 			prev = n.items[i]
-			maxItem, _ := n.children[i].delete(true, "", height-1)
+			maxItem, _ := n.children[i].delete(true, freeKey, height-1)
 			n.items[i] = maxItem
 			deleted = true
 		}
@@ -295,8 +296,8 @@ func (n *node) delete(max bool, key string, height int) (
 
 // Ascend the tree within the range [pivot, last]
 func (tr *BTree) Ascend(
-	pivot string,
-	iter func(key string, value interface{}) bool,
+	pivot int,
+	iter func(key int, value interface{}) bool,
 ) {
 	if tr.root != nil {
 		tr.root.ascend(pivot, iter, tr.height)
@@ -304,8 +305,8 @@ func (tr *BTree) Ascend(
 }
 
 func (n *node) ascend(
-	pivot string,
-	iter func(key string, value interface{}) bool,
+	pivot int,
+	iter func(key int, value interface{}) bool,
 	height int,
 ) bool {
 	i, found := n.find(pivot)
@@ -330,14 +331,14 @@ func (n *node) ascend(
 }
 
 // Reverse all items in tree
-func (tr *BTree) Reverse(iter func(key string, value interface{}) bool) {
+func (tr *BTree) Reverse(iter func(key int, value interface{}) bool) {
 	if tr.root != nil {
 		tr.root.reverse(iter, tr.height)
 	}
 }
 
 func (n *node) reverse(
-	iter func(key string, value interface{}) bool, height int,
+	iter func(key int, value interface{}) bool, height int,
 ) bool {
 	if height == 0 {
 		for i := n.numItems - 1; i >= 0; i-- {
@@ -363,8 +364,8 @@ func (n *node) reverse(
 
 // Descend the tree within the range [pivot, first]
 func (tr *BTree) Descend(
-	pivot string,
-	iter func(key string, value interface{}) bool,
+	pivot int,
+	iter func(key int, value interface{}) bool,
 ) {
 	if tr.root != nil {
 		tr.root.descend(pivot, iter, tr.height)
@@ -372,8 +373,8 @@ func (tr *BTree) Descend(
 }
 
 func (n *node) descend(
-	pivot string,
-	iter func(key string, value interface{}) bool,
+	pivot int,
+	iter func(key int, value interface{}) bool,
 	height int,
 ) bool {
 	i, found := n.find(pivot)
@@ -396,4 +397,22 @@ func (n *node) descend(
 		}
 	}
 	return true
+}
+
+func (tr *BTree) GreaterOrEqual(
+	pivot int,
+	iter func(key int, value interface{}) bool,
+) {
+	if tr.root != nil {
+		tr.root.ascend(pivot, iter, tr.height)
+	}
+}
+
+func (tr *BTree) LessOrEqual(
+	pivot int,
+	iter func(key int, value interface{}) bool,
+) {
+	if tr.root != nil {
+		tr.root.descend(pivot, iter, tr.height)
+	}
 }
