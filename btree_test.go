@@ -84,7 +84,7 @@ func (n *node) deepPrint(level, height int) {
 	}
 }
 
-func intsEquals(a, b []int) bool {
+func intsEquals(a, b []int64) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -99,41 +99,41 @@ func intsEquals(a, b []int) bool {
 func TestDescend(t *testing.T) {
 	var tr BTree
 	var count int
-	tr.Descend(1, func(key int, value interface{}) bool {
+	tr.Descend(1, func(key int64, value interface{}) bool {
 		count++
 		return true
 	})
 	if count > 0 {
 		t.Fatalf("expected 0, got %v", count)
 	}
-	var keys []int
-	for i := 0; i < 1000; i += 10 {
+	var keys []int64
+	for i := int64(0); i < 1000; i += 10 {
 		keys = append(keys, i)
 		tr.Set(keys[len(keys)-1], nil)
 	}
-	var exp []int
-	tr.Reverse(func(key int, _ interface{}) bool {
+	var exp []int64
+	tr.Reverse(func(key int64, _ interface{}) bool {
 		exp = append(exp, key)
 		return true
 	})
-	for i := 999; i >= 0; i-- {
-		var all []int
-		tr.Descend(i, func(key int, value interface{}) bool {
+	for i := int64(999); i >= 0; i-- {
+		var all []int64
+		tr.Descend(i, func(key int64, value interface{}) bool {
 			all = append(all, key)
 			return true
 		})
 		for len(exp) > 0 && i < exp[0] {
 			exp = exp[1:]
 		}
-		var count int
-		tr.Descend(i, func(key int, value interface{}) bool {
+		var count int64
+		tr.Descend(i, func(key int64, value interface{}) bool {
 			if count == (i+1)%maxItems {
 				return false
 			}
 			count++
 			return true
 		})
-		if count > len(exp) {
+		if int(count) > len(exp) {
 			t.Fatalf("expected 1, got %v", count)
 		}
 
@@ -148,22 +148,22 @@ func TestDescend(t *testing.T) {
 func TestAscend(t *testing.T) {
 	var tr BTree
 	var count int
-	tr.Ascend(1, func(key int, value interface{}) bool {
+	tr.Ascend(1, func(key int64, value interface{}) bool {
 		count++
 		return true
 	})
 	if count > 0 {
 		t.Fatalf("expected 0, got %v", count)
 	}
-	var keys []int
-	for i := 0; i < 1000; i += 10 {
+	var keys []int64
+	for i := int64(0); i < 1000; i += 10 {
 		keys = append(keys, i)
 		tr.Set(keys[len(keys)-1], nil)
 	}
 	exp := keys
-	for i := -1; i < 1000; i++ {
-		var all []int
-		tr.Ascend(i, func(key int, value interface{}) bool {
+	for i := int64(-1); i < 1000; i++ {
+		var all []int64
+		tr.Ascend(i, func(key int64, value interface{}) bool {
 			all = append(all, key)
 			return true
 		})
@@ -171,15 +171,15 @@ func TestAscend(t *testing.T) {
 		for len(exp) > 0 && i > exp[0] {
 			exp = exp[1:]
 		}
-		var count int
-		tr.Ascend(i, func(key int, value interface{}) bool {
+		var count int64
+		tr.Ascend(i, func(key int64, value interface{}) bool {
 			if count == (i+1)%maxItems {
 				return false
 			}
 			count++
 			return true
 		})
-		if count > len(exp) {
+		if int(count) > len(exp) {
 			t.Fatalf("expected 1, got %v", count)
 		}
 		if !intsEquals(exp, all) {
@@ -195,7 +195,7 @@ func TestBTree(t *testing.T) {
 
 	// insert all items
 	for _, key := range keys {
-		value, replaced := tr.Set(key, key)
+		value, replaced := tr.Set(int64(key), key)
 		if replaced {
 			t.Fatal("expected false")
 		}
@@ -211,7 +211,7 @@ func TestBTree(t *testing.T) {
 
 	// get each value
 	for _, key := range keys {
-		value, gotten := tr.Get(key)
+		value, gotten := tr.Get(int64(key))
 		if !gotten {
 			t.Fatal("expected true")
 		}
@@ -221,13 +221,13 @@ func TestBTree(t *testing.T) {
 	}
 
 	// scan all items
-	var last int = -1
-	all := make(map[int]interface{})
-	tr.Scan(func(key int, value interface{}) bool {
+	var last int64 = -1
+	all := make(map[int64]interface{})
+	tr.Scan(func(key int64, value interface{}) bool {
 		if key <= last {
 			t.Fatal("out of order", key, last)
 		}
-		if value.(int) != key {
+		if value.(int) != int(key) {
 			t.Fatalf("mismatch")
 		}
 		last = key
@@ -239,13 +239,13 @@ func TestBTree(t *testing.T) {
 	}
 
 	// reverse all items
-	var prev int = -1
-	all = make(map[int]interface{})
-	tr.Reverse(func(key int, value interface{}) bool {
+	var prev int64 = -1
+	all = make(map[int64]interface{})
+	tr.Reverse(func(key int64, value interface{}) bool {
 		if prev != -1 && key >= prev {
 			t.Fatal("out of order", key, prev)
 		}
-		if value.(int) != key {
+		if value.(int) != int(key) {
 			t.Fatalf("mismatch")
 		}
 		prev = key
@@ -266,9 +266,9 @@ func TestBTree(t *testing.T) {
 	}
 
 	// scan and quit at various steps
-	for i := 0; i < 100; i++ {
-		var j int
-		tr.Scan(func(key int, value interface{}) bool {
+	for i := int64(0); i < 100; i++ {
+		var j int64
+		tr.Scan(func(key int64, value interface{}) bool {
 			if j == i {
 				return false
 			}
@@ -278,9 +278,9 @@ func TestBTree(t *testing.T) {
 	}
 
 	// reverse and quit at various steps
-	for i := 0; i < 100; i++ {
-		var j int
-		tr.Reverse(func(key int, value interface{}) bool {
+	for i := int64(0); i < 100; i++ {
+		var j int64
+		tr.Reverse(func(key int64, value interface{}) bool {
 			if j == i {
 				return false
 			}
@@ -291,7 +291,7 @@ func TestBTree(t *testing.T) {
 
 	// delete half the items
 	for _, key := range keys[:len(keys)/2] {
-		value, deleted := tr.Delete(key)
+		value, deleted := tr.Delete(int64(key))
 		if !deleted {
 			t.Fatal("expected true")
 		}
@@ -307,7 +307,7 @@ func TestBTree(t *testing.T) {
 
 	// try delete half again
 	for _, key := range keys[:len(keys)/2] {
-		value, deleted := tr.Delete(key)
+		value, deleted := tr.Delete(int64(key))
 		if deleted {
 			t.Fatal("expected false")
 		}
@@ -318,7 +318,7 @@ func TestBTree(t *testing.T) {
 
 	// try delete half again
 	for _, key := range keys[:len(keys)/2] {
-		value, deleted := tr.Delete(key)
+		value, deleted := tr.Delete(int64(key))
 		if deleted {
 			t.Fatal("expected false")
 		}
@@ -334,12 +334,12 @@ func TestBTree(t *testing.T) {
 
 	// scan items
 	last = -1
-	all = make(map[int]interface{})
-	tr.Scan(func(key int, value interface{}) bool {
+	all = make(map[int64]interface{})
+	tr.Scan(func(key int64, value interface{}) bool {
 		if key <= last {
 			t.Fatal("out of order")
 		}
-		if value.(int) != key {
+		if value.(int) != int(key) {
 			t.Fatalf("mismatch")
 		}
 		last = key
@@ -352,7 +352,7 @@ func TestBTree(t *testing.T) {
 
 	// replace second half
 	for _, key := range keys[len(keys)/2:] {
-		value, replaced := tr.Set(key, key)
+		value, replaced := tr.Set(int64(key), key)
 		if !replaced {
 			t.Fatal("expected true")
 		}
@@ -363,7 +363,7 @@ func TestBTree(t *testing.T) {
 
 	// delete next half the items
 	for _, key := range keys[len(keys)/2:] {
-		value, deleted := tr.Delete(key)
+		value, deleted := tr.Delete(int64(key))
 		if !deleted {
 			t.Fatal("expected true")
 		}
@@ -378,18 +378,18 @@ func TestBTree(t *testing.T) {
 	}
 
 	// do some stuff on an empty tree
-	value, gotten = tr.Get(keys[0])
+	value, gotten = tr.Get(int64(keys[0]))
 	if gotten {
 		t.Fatal("expected false")
 	}
 	if value != nil {
 		t.Fatal("expected nil")
 	}
-	tr.Scan(func(key int, value interface{}) bool {
+	tr.Scan(func(key int64, value interface{}) bool {
 		t.Fatal("should not be reached")
 		return true
 	})
-	tr.Reverse(func(key int, value interface{}) bool {
+	tr.Reverse(func(key int64, value interface{}) bool {
 		t.Fatal("should not be reached")
 		return true
 	})
@@ -410,7 +410,7 @@ func BenchmarkTidwallSequentialSet(b *testing.B) {
 	sort.Ints(keys)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tr.Set(keys[i], nil)
+		tr.Set(int64(keys[i]), nil)
 	}
 }
 
@@ -419,11 +419,11 @@ func BenchmarkTidwallSequentialGet(b *testing.B) {
 	keys := randKeys(b.N)
 	sort.Ints(keys)
 	for i := 0; i < b.N; i++ {
-		tr.Set(keys[i], nil)
+		tr.Set(int64(keys[i]), nil)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tr.Get(keys[i])
+		tr.Get(int64(keys[i]))
 	}
 }
 
@@ -432,7 +432,7 @@ func BenchmarkTidwallRandomSet(b *testing.B) {
 	keys := randKeys(b.N)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tr.Set(keys[i], nil)
+		tr.Set(int64(keys[i]), nil)
 	}
 }
 
@@ -440,11 +440,11 @@ func BenchmarkTidwallRandomGet(b *testing.B) {
 	var tr BTree
 	keys := randKeys(b.N)
 	for i := 0; i < b.N; i++ {
-		tr.Set(keys[i], nil)
+		tr.Set(int64(keys[i]), nil)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tr.Get(keys[i])
+		tr.Get(int64(keys[i]))
 	}
 }
 
@@ -531,30 +531,30 @@ func TestBTree256(t *testing.T) {
 	var n int
 	for j := 0; j < 2; j++ {
 		for _, i := range rand.Perm(256) {
-			tr.Set(i, i)
+			tr.Set(int64(i), i)
 			n++
 			if tr.Len() != n {
 				t.Fatalf("expected 256, got %d", n)
 			}
 		}
 		for _, i := range rand.Perm(256) {
-			v, ok := tr.Get(i)
+			v, ok := tr.Get(int64(i))
 			if !ok {
 				t.Fatal("expected true")
 			}
-			if v.(int) != i {
-				t.Fatalf("expected %d, got %d", i, v.(int))
+			if v.(int) != int(i) {
+				t.Fatalf("expected %d, got %d", i, v.(int64))
 			}
 		}
 		for _, i := range rand.Perm(256) {
-			tr.Delete(i)
+			tr.Delete(int64(i))
 			n--
 			if tr.Len() != n {
 				t.Fatalf("expected 256, got %d", n)
 			}
 		}
 		for _, i := range rand.Perm(256) {
-			_, ok := tr.Get(i)
+			_, ok := tr.Get(int64(i))
 			if ok {
 				t.Fatal("expected false")
 			}
@@ -592,7 +592,6 @@ func TestBTreeRandom(t *testing.T) {
 		}()
 	}
 	wg.Wait()
-	// println(count)
 }
 
 func shuffle(r *rand.Rand, keys []int) {
@@ -607,25 +606,25 @@ func testBTreeRandom(t *testing.T, r *rand.Rand, keys []int, count *uint32) {
 	keys = keys[:rand.Intn(len(keys))]
 	shuffle(r, keys)
 	for i := 0; i < len(keys); i++ {
-		prev, ok := tr.Set(keys[i], keys[i])
+		prev, ok := tr.Set(int64(keys[i]), keys[i])
 		if ok || prev != nil {
 			t.Fatalf("expected nil")
 		}
 	}
 	shuffle(r, keys)
 	for i := 0; i < len(keys); i++ {
-		prev, ok := tr.Get(keys[i])
+		prev, ok := tr.Get(int64(keys[i]))
 		if !ok || prev != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], prev)
 		}
 	}
 	shuffle(r, keys)
 	for i := 0; i < len(keys); i++ {
-		prev, ok := tr.Delete(keys[i])
+		prev, ok := tr.Delete(int64(keys[i]))
 		if !ok || prev != keys[i] {
 			t.Fatalf("expected '%v', got '%v'", keys[i], prev)
 		}
-		prev, ok = tr.Get(keys[i])
+		prev, ok = tr.Get(int64(keys[i]))
 		if ok || prev != nil {
 			t.Fatalf("expected nil")
 		}
@@ -646,14 +645,14 @@ func TestBTreeScan(t *testing.T) {
 
 	var tree BTree
 	for i := 0; i < c; i++ {
-		tree.Set(s[i], "x")
+		tree.Set(int64(s[i]), "x")
 	}
 	assert.Equal(t, c, tree.Len())
 
 	// убеждаемся что полный проход по дереву дает нам отсортированный массив
 	a := make([]int, 0, c)
-	tree.Scan(func(key int, value interface{}) bool {
-		a = append(a, key)
+	tree.Scan(func(key int64, value interface{}) bool {
+		a = append(a, int(key))
 		return true
 	})
 	assert.Equal(t, e, a)
@@ -664,16 +663,16 @@ func TestBTreeScan(t *testing.T) {
 
 	// выбираем все элементы, которые больше
 	a = make([]int, 0, c)
-	tree.GreaterOrEqual(e[i], func(key int, value interface{}) bool {
-		a = append(a, key)
+	tree.GreaterOrEqual(int64(e[i]), func(key int64, value interface{}) bool {
+		a = append(a, int(key))
 		return true
 	})
 	assert.Equal(t, e[i:], a)
 
 	// выбираем все элементы, которые меньше
 	a = make([]int, 0, c)
-	tree.LessOrEqual(e[i], func(key int, value interface{}) bool {
-		a = append(a, key)
+	tree.LessOrEqual(int64(e[i]), func(key int64, value interface{}) bool {
+		a = append(a, int(key))
 		return true
 	})
 	er := e[:i+1]
@@ -681,4 +680,150 @@ func TestBTreeScan(t *testing.T) {
 		er[left], er[right] = er[right], er[left]
 	}
 	assert.Equal(t, er, a)
+}
+
+func TestBTreeNearest(t *testing.T) {
+
+	var tree BTree
+	for i := int64(0); i < 200; i += 2 {
+		tree.Set(i, i)
+	}
+
+	type args struct {
+		key  int64
+		near int64
+	}
+	tests := []args{
+		{0, 0}, {1, 0}, {2, 2}, {3, 2},
+		{61, 60}, {62, 62}, {63, 62},
+		{197, 196}, {199, 198}, {199, 198}, {202, 198},
+	}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			k, _ := tree.GetOrNearest(tt.key)
+			assert.Equal(t, tt.near, k)
+		})
+	}
+}
+
+func TestBTreeNearest2(t *testing.T) {
+
+	var tree BTree
+	tree.Set(1, "x")
+	tree.Set(10, "x")
+	tree.Set(20, "x")
+	tree.Set(30, "x")
+	tree.Set(40, "x")
+	tree.Set(50, "x")
+
+	key, value := tree.GetOrNearest(25)
+	fmt.Printf("near: %v = %v\n", key, value)
+
+	nKey, nValue := tree.Next(key)
+	fmt.Printf("next: %v = %v\n", nKey, nValue)
+
+	pKey, pValue := tree.Prev(key)
+	fmt.Printf("prev: %v = %v\n", pKey, pValue)
+}
+
+func TestBTreePrev(t *testing.T) {
+	var tree BTree
+	for i := int64(1); i <= 10000000; i++ {
+		tree.Set(i, "x")
+	}
+	assert.Equal(t, 10000000, tree.Len())
+
+	var i int64 = 5000000
+	key, _ := tree.GetOrNearest(i)
+	tree.LessOrEqual(key, func(k int64, v interface{}) bool {
+		if k != i {
+			t.Fatalf("mismatch, key: %d, i: %d", k, i)
+		}
+		i--
+		return true
+	})
+}
+
+func TestBTreeNext(t *testing.T) {
+	var tree BTree
+	for i := int64(1); i <= 10000000; i++ {
+		tree.Set(i, "x")
+	}
+	assert.Equal(t, 10000000, tree.Len())
+
+	var i int64 = 5000000
+	key, _ := tree.GetOrNearest(i)
+	tree.GreaterOrEqual(key, func(k int64, v interface{}) bool {
+		if k != i {
+			t.Fatalf("mismatch, key: %d, i: %d", k, i)
+		}
+		i++
+		return true
+	})
+}
+
+func BenchmarkBTreePut(b *testing.B) {
+
+	var tree BTree
+	for i := int64(1); i <= 10000000; i++ {
+		tree.Set(i*10000000, "x")
+	}
+	assert.Equal(b, 10000000, tree.Len())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		tree.Set(int64(n), "x")
+	}
+}
+
+func BenchmarkBTreeGet(b *testing.B) {
+
+	var tree BTree
+	for i := 1; i <= 10000000; i++ {
+		tree.Set(int64(i), "x")
+	}
+	assert.Equal(b, 10000000, tree.Len())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 1; n < b.N; n++ {
+		_, _ = tree.Get(int64(n))
+	}
+}
+
+func BenchmarkBTreeRemove(b *testing.B) {
+
+	var tree BTree
+	for i := 1; i <= 10000000; i++ {
+		tree.Set(int64(i), "x")
+	}
+	assert.Equal(b, 10000000, tree.Len())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		tree.Delete(int64(n))
+	}
+}
+
+func BenchmarkBTreeIterate(b *testing.B) {
+
+	var tree BTree
+	for i := 1; i <= 10000000; i++ {
+		tree.Set(int64(i*10000000), i)
+	}
+	assert.Equal(b, 10000000, tree.Len())
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	for n := 0; n < b.N; n++ {
+		tree.Scan(func(key int64, value interface{}) bool {
+			return true
+		})
+	}
 }
